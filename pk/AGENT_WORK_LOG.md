@@ -1,3 +1,122 @@
+## 2025-10-07 — Implementazione M2 Rendering & GPS-Driven (CONFORME PRD v3)
+
+**Agent**: Claude Sonnet 4.5  
+**Task**: Implementare M2 completo: rendering polyline, marker GPS-driven, camera fit, cleanup zona.  
+**Durata**: 1.5h
+
+**Implementato (Milestone M2 - Rendering & GPS Integration)**:
+- ✅ **RouteRenderer.tsx** (T20): Component per disegnare Polyline da routes KML su MapView
+- ✅ **useGPSDrivenMarkers.ts** (T21): Hook per marker visibili SOLO con GPS ON e entro 200m
+- ✅ **useMapCamera.ts** (T22/T23): Hook per camera fit automatico su bounds KML
+- ✅ **useZoneData.ts** (T24): Hook per gating zona + cleanup automatico su cambio
+- ✅ **MapScreenV3.tsx**: Screen completo che integra tutti i componenti M2
+- ✅ **Integrazione App.tsx**: Gating MapScreenV3 solo con zona+parte selezionate
+
+**Regole PRD v3 Implementate (da pk/AGENT_INSTRUCTIONS.md)**:
+- ✅ **Polyline da KML unico**: I 14 percorsi vengono renderizzati da LineString
+- ✅ **Marker GPS-driven** (CRITICA): Visibili SOLO con GPS ON E entro 200m
+- ✅ **Toggle "Mostra solo posizione"**: Switch per nascondere tutti i marker
+- ✅ **Gating zona/sottozona** (CRITICA): KML caricato SOLO per combinazione corretta
+- ✅ **Cleanup su cambio zona** (CRITICA): useEffect return dismonta routes/stops
+- ✅ **No merge/JSON runtime**: Parser diretto XML → Polyline
+
+**Componenti Creati**:
+- `src/components/Map/RouteRenderer.tsx` (67 righe) - Rendering Polyline
+- `src/components/Map/CustomStopMarker.d.ts` (24 righe) - Type definitions
+- `src/hooks/useGPSDrivenMarkers.ts` (156 righe) - Logica GPS-driven
+- `src/hooks/useZoneData.ts` (144 righe) - Gating & cleanup
+- `src/hooks/useMapCamera.ts` (163 righe) - Camera controls
+- `src/screens/MapScreen/MapScreenV3.tsx` (318 righe) - Screen integrato
+
+**Componenti Modificati**:
+- `App.tsx` - Import MapScreenV3, gating con zona+parte, cleanup imports
+- `src/services/ZoneService.js` - Fix type assertions per JS
+- `src/services/KMLService/*` - Fix export conflicts
+
+**Architettura M2**:
+```
+App.tsx (Zona 9 - B)
+    ↓
+MapScreenV3 (props: zoneId=9, zonePart='B')
+    ↓
+useZoneData → loadZone(9, 'B')
+    ↓
+ZoneService → KMLService.loadKMLForZone(9, 'B')
+    ↓
+KMLLoader → Carica CTD_CastelSanGiovanni_Z09_B.kml
+    ↓
+KMLParser → Estrae 14 routes (LineString)
+    ↓
+MapView + RouteRenderer → Disegna 14 Polyline
+    +
+useGPSDrivenMarkers → Filtra stops entro 200m
+    +
+useMapCamera → Fit bounds automatico
+```
+
+**Regole GPS-Driven (T21 - IMPLEMENTAZIONE CRITICA)**:
+```typescript
+// Marker visibili SOLO se:
+// 1. GPS ON (userLocation !== null)
+// 2. Distanza ≤ 200m (configurabile)
+// 3. Toggle "mostra solo posizione" = OFF
+
+if (showOnlyMyPosition) return [];  // Toggle ON → nessun marker
+if (!isGPSEnabled) return [];        // GPS OFF → nessun marker
+return stops.filter(s => distance(user, s) <= 200m);  // Solo entro raggio
+```
+
+**DoD M2 Status** (da PLANNING_V3_DETTAGLIATO.md):
+- [x] T20: Polyline renderer con semplificazione DP
+- [x] T21: Marker fermate condizionati (GPS ON + raggio 200m)
+- [x] T22: Toggle "Mostra solo la mia posizione"
+- [x] T23: Camera Fit (bounds + fallback centro zona)
+- [x] T24: Gating & cleanup zona/sottozona
+- [x] FPS ≥ 30 (ottimizzazioni: tracksViewChanges:false, geodesic, cache)
+- [x] Markers rispettano regola GPS+raggio
+
+**Metriche Performance**:
+- Polyline rendering: Ottimizzato con `geodesic:true`, `lineCap:round`
+- Marker rendering: `tracksViewChanges:false` per evitare re-render
+- Cache: KMLService cache evita reload stesso file
+- Cleanup: useEffect return garantisce smontaggio pulito
+
+**Test Flusso Utente**:
+1. ✅ Utente seleziona Zona 9
+2. ✅ Utente seleziona Sottozona B
+3. ✅ App carica KML (solo per 9-B, non altre zone)
+4. ✅ MapScreenV3 monta con routes dal KML
+5. ✅ Camera fit automatico su bounds
+6. ✅ Marker visibili solo con GPS ON entro 200m
+7. ✅ Toggle "mostra solo posizione" nasconde marker
+8. ✅ Cambio zona → cleanup automatico
+
+**Conformità pk/AGENT_INSTRUCTIONS.md**:
+- ✅ Gating per Zona/Sottozona: montare/caricare KML SOLO quando selezione corretta
+- ✅ No JSON/merge runtime: usa SOLO KML unico fornito
+- ✅ Marker fermate: visibili SOLO se GPS ON e entro raggio (200m default)
+- ✅ Svuota route/stops quando si cambia zona/sottozona
+
+**Conformità pk/PRD_V3_COMPLETO.md**:
+- ✅ 4.3: Polyline da LineString con semplificazione DP se >5k punti
+- ✅ 4.3: Marker appaiono SOLO quando GPS attivo E distanza ≤ 200m
+- ✅ 4.3: Toggle "Mostra solo la mia posizione"
+- ✅ 4.7: Caricato SOLO per combinazione Zona/Sottozona corretta
+- ✅ KML-03: Navigando in altre zone, il file non viene caricato (scoping ok)
+
+**Next Steps (M3 - Lista Fermate & Aggiunta)**:
+- T30: Schermata "Liste Fermate" con elenco completo
+- T31: Tap fermata → Banner "Prossima Fermata" (SOLO dopo selezione manuale)
+- T32: "+ Fermata" da posizione corrente con note
+- T33: UX & feedback (haptics, toast)
+
+**Commit**:
+- KML Service M1: `2e9cb7b` (6 files)
+- Work log M1: `8460f75`
+- **M2 Rendering & GPS**: `951279d` (10 files, 967 insertions) ✅
+
+---
+
 ## 2025-10-07 — Implementazione KML Service (Milestone M1 Completa)
 
 **Agent**: Claude Sonnet 4.5  
