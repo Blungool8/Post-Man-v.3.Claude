@@ -1,4 +1,5 @@
 import { ZONE_DATA, MAP_CONFIG, CTD_INFO } from '../config/ZoneConfig';
+import KMLService from './KMLService/KMLService';
 
 class ZoneService {
   // Ottieni tutte le zone disponibili
@@ -61,53 +62,61 @@ class ZoneService {
       throw new Error('Parte deve essere A o B');
     }
 
-    const centerCoords = MAP_CONFIG.gpsConfig.getCenterCoordinates(zoneId);
-    console.log(`Coordinate centro zona ${zoneId}:`, centerCoords);
+    try {
+      // Carica KML reale per la zona
+      console.log(`[ZoneService] Caricamento KML per Zona ${zoneId} - Sottozona ${part}...`);
+      const kmlData = await KMLService.loadKMLForZone(zoneId, part);
+      
+      const bounds = kmlData.parsed.bounds;
+      const centerCoords = {
+        latitude: (bounds.north + bounds.south) / 2,
+        longitude: (bounds.east + bounds.west) / 2
+      };
+      
+      console.log(`[ZoneService] KML caricato con successo:`);
+      console.log(`  - Routes: ${kmlData.parsed.routes.length}`);
+      console.log(`  - Stops: ${kmlData.parsed.stops.length}`);
+      console.log(`  - Total points: ${kmlData.parsed.totalPoints}`);
+      console.log(`  - Center: ${centerCoords.latitude}, ${centerCoords.longitude}`);
 
-    // Crea mappa specifica per la parte A o B
-    const partSpecificMapImage = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
-      <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-        <rect width="400" height="300" fill="${part === 'A' ? '#e8f5e8' : '#fff3e0'}"/>
-        <text x="200" y="100" text-anchor="middle" font-family="Arial" font-size="32" fill="#2196F3">
-          Zona ${zoneId}
-        </text>
-        <text x="200" y="130" text-anchor="middle" font-family="Arial" font-size="24" fill="${part === 'A' ? '#4CAF50' : '#FF9800'}">
-          Sottozona ${part}
-        </text>
-        <text x="200" y="160" text-anchor="middle" font-family="Arial" font-size="16" fill="#666">
-          CTD Castel San Giovanni
-        </text>
-        <text x="200" y="180" text-anchor="middle" font-family="Arial" font-size="14" fill="#999">
-          Provincia di Piacenza
-        </text>
-        <circle cx="200" cy="210" r="10" fill="${part === 'A' ? '#4CAF50' : '#FF9800'}"/>
-        <text x="200" y="215" text-anchor="middle" font-family="Arial" font-size="12" fill="#fff">
-          ${part}
-        </text>
-        <text x="200" y="240" text-anchor="middle" font-family="Arial" font-size="12" fill="#666">
-          ${zone.municipalities[0]}
-        </text>
-        <text x="200" y="255" text-anchor="middle" font-family="Arial" font-size="10" fill="#999">
-          ~${Math.floor(zone.estimatedStops / 2)} fermate
-        </text>
-      </svg>
-    `)}`;
-
-    const result = {
-      zoneId,
-      part,
-      mapImage: partSpecificMapImage,
-      realMapPath: zone.realMapPath,
-      municipalities: zone.municipalities,
-      estimatedStops: zone.estimatedStops,
-      centerCoordinates: centerCoords
-    };
-    
-    console.log('Risultato loadZoneMap:', result);
-    return result;
+      const result = {
+        zoneId,
+        part,
+        kmlData: kmlData.parsed,
+        validation: kmlData.validation,
+        routes: kmlData.parsed.routes,
+        stops: kmlData.parsed.stops,
+        bounds: kmlData.parsed.bounds,
+        municipalities: zone.municipalities,
+        estimatedStops: kmlData.parsed.stops.length || zone.estimatedStops,
+        centerCoordinates: centerCoords,
+        metadata: kmlData.parsed.metadata
+      };
+      
+      console.log('[ZoneService] ✅ loadZoneMap completato con successo');
+      return result;
+      
+    } catch (error) {
+      console.error(`[ZoneService] ❌ Errore caricamento KML:`, error);
+      
+      // Fallback ai dati configurati se KML non disponibile
+      console.warn(`[ZoneService] Fallback a dati predefiniti per Zona ${zoneId} - ${part}`);
+      const centerCoords = MAP_CONFIG.gpsConfig.getCenterCoordinates(zoneId);
+      
+      return {
+        zoneId,
+        part,
+        routes: [],
+        stops: [],
+        municipalities: zone.municipalities,
+        estimatedStops: zone.estimatedStops,
+        centerCoordinates: centerCoords,
+        error: (error as Error).message
+      };
+    }
   }
 
-  // Ottieni fermate per zona (per ora dati di esempio)
+  // Ottieni fermate per zona dal KML
   static async getStopsForZone(zoneId, part) {
     console.log(`ZoneService.getStopsForZone chiamato con zoneId: ${zoneId}, part: ${part}`);
     
@@ -117,43 +126,54 @@ class ZoneService {
       return [];
     }
 
-    // Per ora restituisce fermate di esempio
-    // In futuro qui si integrerà con il database reale
-    const exampleStops = [
-      {
-        id: `${zoneId}_${part}_1`,
-        name: `Via Roma ${Math.floor(Math.random() * 100)}`,
-        address: `${zone.municipalities[0]}, PC`,
-        latitude: MAP_CONFIG.gpsConfig.getCenterCoordinates(zoneId).latitude + (Math.random() - 0.5) * 0.01,
-        longitude: MAP_CONFIG.gpsConfig.getCenterCoordinates(zoneId).longitude + (Math.random() - 0.5) * 0.01,
+    try {
+      // Carica fermate dal KML usando KMLService
+      const stops = await KMLService.getStopsForZone(zoneId, part);
+      
+      // Arricchisci fermate con dati aggiuntivi
+      const enrichedStops = stops.map((stop, index) => ({
+        ...stop,
+        address: `${stop.name}, ${zone.municipalities[0]}, PC`,
         status: 'pending',
         zone: zoneId,
         part: part
-      },
-      {
-        id: `${zoneId}_${part}_2`,
-        name: `Piazza Garibaldi ${Math.floor(Math.random() * 50)}`,
-        address: `${zone.municipalities[0]}, PC`,
-        latitude: MAP_CONFIG.gpsConfig.getCenterCoordinates(zoneId).latitude + (Math.random() - 0.5) * 0.01,
-        longitude: MAP_CONFIG.gpsConfig.getCenterCoordinates(zoneId).longitude + (Math.random() - 0.5) * 0.01,
-        status: 'pending',
-        zone: zoneId,
-        part: part
-      },
-      {
-        id: `${zoneId}_${part}_3`,
-        name: `Via Nazionale ${Math.floor(Math.random() * 200)}`,
-        address: `${zone.municipalities[0]}, PC`,
-        latitude: MAP_CONFIG.gpsConfig.getCenterCoordinates(zoneId).latitude + (Math.random() - 0.5) * 0.01,
-        longitude: MAP_CONFIG.gpsConfig.getCenterCoordinates(zoneId).longitude + (Math.random() - 0.5) * 0.01,
-        status: 'pending',
-        zone: zoneId,
-        part: part
-      }
-    ];
+      }));
 
-    console.log(`Fermate generate per zona ${zoneId} parte ${part}:`, exampleStops);
-    return exampleStops;
+      console.log(`[ZoneService] ✅ ${enrichedStops.length} fermate caricate dal KML per zona ${zoneId} parte ${part}`);
+      return enrichedStops;
+      
+    } catch (error) {
+      console.error(`[ZoneService] ❌ Errore caricamento fermate:`, error);
+      
+      // Fallback a fermate di esempio se KML non disponibile
+      console.warn(`[ZoneService] Fallback a fermate di esempio`);
+      const centerCoords = MAP_CONFIG.gpsConfig.getCenterCoordinates(zoneId);
+      
+      const exampleStops = [
+        {
+          id: `${zoneId}_${part}_1`,
+          name: `Fermata esempio 1`,
+          address: `${zone.municipalities[0]}, PC`,
+          latitude: centerCoords.latitude + 0.002,
+          longitude: centerCoords.longitude + 0.002,
+          status: 'pending',
+          zone: zoneId,
+          part: part
+        },
+        {
+          id: `${zoneId}_${part}_2`,
+          name: `Fermata esempio 2`,
+          address: `${zone.municipalities[0]}, PC`,
+          latitude: centerCoords.latitude - 0.002,
+          longitude: centerCoords.longitude - 0.002,
+          status: 'pending',
+          zone: zoneId,
+          part: part
+        }
+      ];
+      
+      return exampleStops;
+    }
   }
 
   // Trova fermate vicine alla posizione GPS
