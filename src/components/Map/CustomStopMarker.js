@@ -122,6 +122,8 @@ const CustomStopMarker = memo(({ stop, size, onPress, isNearest = false }) => {
   );
 });
 
+CustomStopMarker.displayName = 'CustomStopMarker';
+
 const styles = StyleSheet.create({
   marker: {
     alignItems: 'center',

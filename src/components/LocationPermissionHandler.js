@@ -100,7 +100,7 @@ const LocationPermissionHandler = ({ onPermissionGranted, onLocationUpdate, chil
         <View style={styles.permissionContainer}>
           <Text style={styles.permissionTitle}>📍 Accesso alla Posizione</Text>
           <Text style={styles.permissionText}>
-            Per utilizzare l'app è necessario accedere alla tua posizione GPS.
+            Per utilizzare l&apos;app è necessario accedere alla tua posizione GPS.
           </Text>
           <TouchableOpacity 
             style={styles.permissionButton}
