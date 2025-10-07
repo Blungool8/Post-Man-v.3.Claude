@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { 
   StyleSheet, 
@@ -8,12 +8,11 @@ import {
   ScrollView, 
   Alert, 
   Modal,
-  TextInput,
-  Platform,
-  Image
+  TextInput
 } from 'react-native';
 import ZoneService from './src/services/ZoneService';
 import { ZONE_DATA, CTD_INFO } from './src/config/ZoneConfig';
+import MapScreenV3 from './src/screens/MapScreen/MapScreenV3';
 
 // Dati di esempio per le liste fermate
 const exampleStopLists = [
@@ -114,7 +113,6 @@ export default function App() {
   const [selectedZonePart, setSelectedZonePart] = useState<'A' | 'B' | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [newListName, setNewListName] = useState('');
-  const [mapLoadError, setMapLoadError] = useState(false);
 
   const handleSelectZone = () => {
     setShowZoneModal(true);
@@ -266,79 +264,17 @@ export default function App() {
     setShowMap(false);
     setSelectedZone(null);
     setSelectedZonePart(null);
-    setMapLoadError(false);
   };
 
 
-  if (showMap && selectedZone) {
+  // T24: Gating - Mostra MapScreenV3 SOLO se zona e parte sono selezionate
+  if (showMap && selectedZone && selectedZonePart) {
     return (
-      <View style={styles.container}>
-        <StatusBar style="auto" />
-        
-        <View style={styles.mapHeader}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBackToMain}>
-            <Text style={styles.backButtonText}>← Torna</Text>
-          </TouchableOpacity>
-          <Text style={styles.mapTitle}>
-            {selectedZone.name} - Sottozona {selectedZonePart}
-          </Text>
-        </View>
-
-        <View style={styles.mapContainer}>
-          <Image 
-            source={{ uri: selectedZone.mapImage }} 
-            style={styles.mapImage}
-            resizeMode="contain"
-            onError={(error) => {
-              console.error('Errore caricamento immagine:', error);
-              setMapLoadError(true);
-            }}
-            onLoad={() => {
-              console.log('Immagine mappa caricata con successo');
-              setMapLoadError(false);
-            }}
-          />
-          {mapLoadError && (
-            <View style={styles.fallbackMapContainer}>
-              <View style={styles.fallbackMap}>
-                <Text style={styles.fallbackMapText}>🗺️</Text>
-                <Text style={styles.fallbackMapTitle}>Mappa Zona</Text>
-                <Text style={styles.fallbackMapSubtitle}>{selectedZone.name}</Text>
-                <Text style={styles.fallbackMapInfo}>Sottozona {selectedZonePart}</Text>
-              </View>
-            </View>
-          )}
-          {mapLoadError && (
-            <View style={styles.mapErrorContainer}>
-              <Text style={styles.mapErrorText}>⚠️ Errore caricamento mappa</Text>
-              <Text style={styles.mapErrorSubtext}>Usando mappa di fallback</Text>
-            </View>
-          )}
-          <View style={styles.mapOverlay}>
-            <Text style={styles.mapInfo}>
-              🗺️ Mappa {selectedZone.name} - Sottozona {selectedZonePart}
-            </Text>
-            <Text style={styles.mapDescription}>
-              CTD Castel San Giovanni - Via Bellini 17, 29015 PC
-            </Text>
-            <Text style={styles.mapNote}>
-              📍 Funzionalità GPS e ricerca fermate in arrivo
-            </Text>
-            <Text style={styles.mapDebug}>
-              🔧 Debug: URL mappa: {selectedZone.mapImage}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.mapActions}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>📍 Trova Fermate GPS</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionButtonText}>🗺️ Modalità Offline</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <MapScreenV3
+        zoneId={selectedZone.id}
+        zonePart={selectedZonePart}
+        onBack={handleBackToMain}
+      />
     );
   }
 

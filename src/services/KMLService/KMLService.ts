@@ -6,9 +6,12 @@
  * un'interfaccia semplice al resto dell'app
  */
 
-import KMLLoader, { KMLLoadResult } from './KMLLoader';
-import KMLParser, { ParsedKML, RouteSegment, Stop } from './KMLParser';
-import KMLValidator, { ValidationResult } from './KMLValidator';
+import KMLLoader from './KMLLoader';
+import type { KMLLoadResult } from './KMLLoader';
+import KMLParser from './KMLParser';
+import type { ParsedKML, RouteSegment, Stop } from './KMLParser';
+import KMLValidator from './KMLValidator';
+import type { ValidationResult } from './KMLValidator';
 
 export interface KMLData {
   parsed: ParsedKML;
@@ -177,5 +180,4 @@ class KMLService {
 }
 
 export default KMLService;
-export type { KMLData, ParsedKML, RouteSegment, Stop, ValidationResult };
 

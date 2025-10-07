@@ -8,7 +8,8 @@ export { default as KMLLoader } from './KMLLoader';
 export { default as KMLParser } from './KMLParser';
 export { default as KMLValidator } from './KMLValidator';
 
-export type { KMLData, ParsedKML, RouteSegment, Stop, ValidationResult } from './KMLService';
+export type { KMLData } from './KMLService';
 export type { KMLLoadResult } from './KMLLoader';
-export type { LatLng } from './KMLParser';
+export type { LatLng, RouteSegment, Stop, ParsedKML } from './KMLParser';
+export type { ValidationResult } from './KMLValidator';
 

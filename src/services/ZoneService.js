@@ -111,7 +111,7 @@ class ZoneService {
         municipalities: zone.municipalities,
         estimatedStops: zone.estimatedStops,
         centerCoordinates: centerCoords,
-        error: (error as Error).message
+        error: error.message || String(error)
       };
     }
   }
