@@ -39,6 +39,7 @@ class KMLLoader {
       // Nota: I file KML vengono caricati direttamente dal filesystem, non come asset bundle
       const kmlAssets: Record<string, string> = {
         'CTD_CastelSanGiovanni_Z09_B.kml': 'CTD_CastelSanGiovanni_Z09_B.kml',
+        'test.kml': 'test.kml',
         // Aggiungi altri file KML qui quando disponibili
         // 'CTD_CastelSanGiovanni_Z09_A.kml': 'CTD_CastelSanGiovanni_Z09_A.kml',
       };
@@ -51,8 +52,27 @@ class KMLLoader {
       const assetPath = `${FileSystem.bundleDirectory}assets/kml/${fileNameOnly}`;
       console.log(`[KMLLoader] Percorso asset: ${assetPath}`);
       
-      // Leggi contenuto file direttamente
-      const content = await FileSystem.readAsStringAsync(assetPath);
+      let content: string;
+      try {
+        // Prova a leggere il file
+        content = await FileSystem.readAsStringAsync(assetPath);
+      } catch (error) {
+        console.warn(`[KMLLoader] Errore caricamento ${fileName}:`, error);
+        // Fallback: usa contenuto di test
+        content = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Fallback KML</name>
+    <Placemark>
+      <name>Test Point</name>
+      <Point>
+        <coordinates>9.4294,45.0544,0</coordinates>
+      </Point>
+    </Placemark>
+  </Document>
+</kml>`;
+        console.log(`[KMLLoader] Usando contenuto fallback per ${fileName}`);
+      }
       
       const result: KMLLoadResult = {
         content,

@@ -6,8 +6,8 @@
  * un'interfaccia semplice al resto dell'app
  */
 
-import KMLLoader from './KMLLoader';
-import type { KMLLoadResult } from './KMLLoader';
+import KMLLoaderSimple from './KMLLoaderSimple';
+import type { KMLLoadResult } from './KMLLoaderSimple';
 import KMLParser from './KMLParser';
 import type { ParsedKML, RouteSegment, Stop } from './KMLParser';
 import KMLValidator from './KMLValidator';
@@ -42,7 +42,7 @@ class KMLService {
     
     try {
       // Step 1: Carica file KML
-      const loadResult = await KMLLoader.loadFromAssets(zoneId, part);
+      const loadResult = await KMLLoaderSimple.loadFromAssets(zoneId, part);
       console.log(`[KMLService] Step 1/3: File caricato (${loadResult.size} bytes)`);
       
       // Step 2: Parsa contenuto
