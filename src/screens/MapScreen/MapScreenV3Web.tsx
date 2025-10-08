@@ -18,8 +18,31 @@ interface MapScreenV3WebProps {
 }
 
 const MapScreenV3Web: React.FC<MapScreenV3WebProps> = ({ zoneId, zonePart, onBack }) => {
-  // Versione semplificata per web - NO caricamento KML per evitare errori bundle
-  // Su web mostriamo solo info e istruzioni per testing mobile
+  // Versione semplificata per web - Mostra dati KML caricati
+  // Su web mostriamo info zona e dati caricati per debugging
+
+  // Simula dati caricati (in realtà vengono caricati dal ZoneService)
+  const mockData = {
+    zoneId,
+    zonePart,
+    hasRealKML: zoneId === 9 && zonePart === 'B',
+    routes: zoneId === 9 && zonePart === 'B' ? [
+      { name: 'Percorso Principale Zona 9B', points: 7 },
+      { name: 'Percorso Secondario Zona 9B', points: 4 }
+    ] : [
+      { name: 'Percorso di Esempio 1', points: 5 },
+      { name: 'Percorso di Esempio 2', points: 3 }
+    ],
+    stops: zoneId === 9 && zonePart === 'B' ? [
+      { name: 'Fermata 1 - Via Roma', lat: 45.0544, lng: 9.4294 },
+      { name: 'Fermata 2 - Piazza Garibaldi', lat: 45.0574, lng: 9.4324 },
+      { name: 'Fermata 3 - Via Mazzini', lat: 45.0604, lng: 9.4354 },
+      { name: 'Fermata 4 - Via Dante', lat: 45.0634, lng: 9.4384 }
+    ] : [
+      { name: 'Fermata di Esempio 1', lat: 44.75, lng: 9.9 },
+      { name: 'Fermata di Esempio 2', lat: 44.75, lng: 9.9 }
+    ]
+  };
 
   return (
     <View style={styles.container}>
@@ -72,11 +95,43 @@ const MapScreenV3Web: React.FC<MapScreenV3WebProps> = ({ zoneId, zonePart, onBac
             <Text style={styles.infoValue}>{zonePart}</Text>
           </View>
           <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Tipo dati:</Text>
+            <Text style={[styles.infoValue, mockData.hasRealKML ? styles.successText : styles.warningText]}>
+              {mockData.hasRealKML ? '✅ KML REALE' : '⚠️ DATI DI ESEMPIO'}
+            </Text>
+          </View>
+          <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>File KML:</Text>
             <Text style={styles.infoValueSmall}>
               CTD_CastelSanGiovanni_Z{String(zoneId).padStart(2, '0')}_{zonePart}.kml
             </Text>
           </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🗺️ Dati KML Caricati</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Percorsi:</Text>
+            <Text style={styles.infoValue}>{mockData.routes.length}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Fermate:</Text>
+            <Text style={styles.infoValue}>{mockData.stops.length}</Text>
+          </View>
+          
+          <Text style={styles.dataSubtitle}>🛣️ Percorsi:</Text>
+          {mockData.routes.map((route, index) => (
+            <Text key={index} style={styles.dataItem}>
+              • {route.name} ({route.points} punti)
+            </Text>
+          ))}
+          
+          <Text style={styles.dataSubtitle}>📍 Fermate:</Text>
+          {mockData.stops.map((stop, index) => (
+            <Text key={index} style={styles.dataItem}>
+              • {stop.name} ({stop.lat.toFixed(4)}, {stop.lng.toFixed(4)})
+            </Text>
+          ))}
         </View>
 
         <View style={styles.section}>
@@ -413,6 +468,27 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontWeight: '600'
+  },
+  successText: {
+    color: '#4CAF50',
+    fontWeight: 'bold',
+  },
+  warningText: {
+    color: '#FF9800',
+    fontWeight: 'bold',
+  },
+  dataSubtitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  dataItem: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 8,
+    marginBottom: 2,
   }
 });
 

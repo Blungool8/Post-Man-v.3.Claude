@@ -49,7 +49,7 @@ class KMLLoader {
       }
       
       // Carica direttamente dal filesystem (bundle directory)
-      const assetPath = `${FileSystem.bundleDirectory}assets/kml/${fileNameOnly}`;
+      const assetPath = `${FileSystem.bundleDirectory}assets/kml/${fileName}`;
       console.log(`[KMLLoader] Percorso asset: ${assetPath}`);
       
       let content: string;

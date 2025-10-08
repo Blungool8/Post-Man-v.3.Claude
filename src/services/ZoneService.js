@@ -62,57 +62,78 @@ class ZoneService {
       throw new Error('Parte deve essere A o B');
     }
 
-    try {
-      // Carica KML reale per la zona
-      console.log(`[ZoneService] Caricamento KML per Zona ${zoneId} - Sottozona ${part}...`);
-      const kmlData = await KMLService.loadKMLForZone(zoneId, part);
-      
-      const bounds = kmlData.parsed.bounds;
-      const centerCoords = {
-        latitude: (bounds.north + bounds.south) / 2,
-        longitude: (bounds.east + bounds.west) / 2
-      };
-      
-      console.log(`[ZoneService] KML caricato con successo:`);
-      console.log(`  - Routes: ${kmlData.parsed.routes.length}`);
-      console.log(`  - Stops: ${kmlData.parsed.stops.length}`);
-      console.log(`  - Total points: ${kmlData.parsed.totalPoints}`);
-      console.log(`  - Center: ${centerCoords.latitude}, ${centerCoords.longitude}`);
+    // Solo Zona 9-B ha KML reale disponibile
+    const hasRealKML = zoneId === 9 && part === 'B';
+    
+    if (hasRealKML) {
+      try {
+        // Carica KML reale per Zona 9-B
+        console.log(`[ZoneService] Caricamento KML REALE per Zona ${zoneId} - Sottozona ${part}...`);
+        const kmlData = await KMLService.loadKMLForZone(zoneId, part);
+        
+        const bounds = kmlData.parsed.bounds;
+        const centerCoords = {
+          latitude: (bounds.north + bounds.south) / 2,
+          longitude: (bounds.east + bounds.west) / 2
+        };
+        
+        console.log(`[ZoneService] KML REALE caricato con successo:`);
+        console.log(`  - Routes: ${kmlData.parsed.routes.length}`);
+        console.log(`  - Stops: ${kmlData.parsed.stops.length}`);
+        console.log(`  - Total points: ${kmlData.parsed.totalPoints}`);
+        console.log(`  - Center: ${centerCoords.latitude}, ${centerCoords.longitude}`);
 
+        const result = {
+          zoneId,
+          part,
+          kmlData: kmlData.parsed,
+          validation: kmlData.validation,
+          routes: kmlData.parsed.routes,
+          stops: kmlData.parsed.stops,
+          bounds: kmlData.parsed.bounds,
+          municipalities: zone.municipalities,
+          estimatedStops: kmlData.parsed.stops.length || zone.estimatedStops,
+          centerCoordinates: centerCoords,
+          metadata: kmlData.parsed.metadata,
+          hasRealKML: true
+        };
+        
+        console.log('[ZoneService] ✅ loadZoneMap con KML REALE completato con successo');
+        return result;
+        
+      } catch (error) {
+        console.error(`[ZoneService] ❌ Errore caricamento KML REALE:`, error);
+        throw error; // Non fare fallback per Zone 9-B, deve funzionare
+      }
+    } else {
+      // Per tutte le altre zone, usa dati di esempio
+      console.log(`[ZoneService] Zona ${zoneId}-${part} non supportata per KML reale, usando dati di esempio`);
+      
+      const centerCoords = MAP_CONFIG.gpsConfig.getCenterCoordinates(zoneId);
+      
+      // Genera dati di esempio per la zona
+      const exampleRoutes = this.generateExampleRoutes(zoneId, part, centerCoords);
+      const exampleStops = this.generateExampleStops(zoneId, part, centerCoords);
+      
       const result = {
         zoneId,
         part,
-        kmlData: kmlData.parsed,
-        validation: kmlData.validation,
-        routes: kmlData.parsed.routes,
-        stops: kmlData.parsed.stops,
-        bounds: kmlData.parsed.bounds,
-        municipalities: zone.municipalities,
-        estimatedStops: kmlData.parsed.stops.length || zone.estimatedStops,
-        centerCoordinates: centerCoords,
-        metadata: kmlData.parsed.metadata
-      };
-      
-      console.log('[ZoneService] ✅ loadZoneMap completato con successo');
-      return result;
-      
-    } catch (error) {
-      console.error(`[ZoneService] ❌ Errore caricamento KML:`, error);
-      
-      // Fallback ai dati configurati se KML non disponibile
-      console.warn(`[ZoneService] Fallback a dati predefiniti per Zona ${zoneId} - ${part}`);
-      const centerCoords = MAP_CONFIG.gpsConfig.getCenterCoordinates(zoneId);
-      
-      return {
-        zoneId,
-        part,
-        routes: [],
-        stops: [],
+        routes: exampleRoutes,
+        stops: exampleStops,
         municipalities: zone.municipalities,
         estimatedStops: zone.estimatedStops,
         centerCoordinates: centerCoords,
-        error: error.message || String(error)
+        bounds: this.calculateBoundsFromStops(exampleStops),
+        hasRealKML: false,
+        isExampleData: true
       };
+      
+      console.log(`[ZoneService] ✅ Dati di esempio generati per Zona ${zoneId}-${part}:`);
+      console.log(`  - Routes: ${exampleRoutes.length}`);
+      console.log(`  - Stops: ${exampleStops.length}`);
+      console.log(`  - Center: ${centerCoords.latitude}, ${centerCoords.longitude}`);
+      
+      return result;
     }
   }
 
@@ -126,52 +147,39 @@ class ZoneService {
       return [];
     }
 
-    try {
-      // Carica fermate dal KML usando KMLService
-      const stops = await KMLService.getStopsForZone(zoneId, part);
-      
-      // Arricchisci fermate con dati aggiuntivi
-      const enrichedStops = stops.map((stop, index) => ({
-        ...stop,
-        address: `${stop.name}, ${zone.municipalities[0]}, PC`,
-        status: 'pending',
-        zone: zoneId,
-        part: part
-      }));
+    // Solo Zona 9-B ha KML reale disponibile
+    const hasRealKML = zoneId === 9 && part === 'B';
+    
+    if (hasRealKML) {
+      try {
+        // Carica fermate dal KML usando KMLService
+        console.log(`[ZoneService] Caricamento fermate REALE dal KML per Zona ${zoneId} - Sottozona ${part}...`);
+        const stops = await KMLService.getStopsForZone(zoneId, part);
+        
+        // Arricchisci fermate con dati aggiuntivi
+        const enrichedStops = stops.map((stop, index) => ({
+          ...stop,
+          address: `${stop.name}, ${zone.municipalities[0]}, PC`,
+          status: 'pending',
+          zone: zoneId,
+          part: part
+        }));
 
-      console.log(`[ZoneService] ✅ ${enrichedStops.length} fermate caricate dal KML per zona ${zoneId} parte ${part}`);
-      return enrichedStops;
-      
-    } catch (error) {
-      console.error(`[ZoneService] ❌ Errore caricamento fermate:`, error);
-      
-      // Fallback a fermate di esempio se KML non disponibile
-      console.warn(`[ZoneService] Fallback a fermate di esempio`);
+        console.log(`[ZoneService] ✅ ${enrichedStops.length} fermate REALE caricate dal KML per zona ${zoneId} parte ${part}`);
+        return enrichedStops;
+        
+      } catch (error) {
+        console.error(`[ZoneService] ❌ Errore caricamento fermate REALE:`, error);
+        throw error; // Non fare fallback per Zone 9-B, deve funzionare
+      }
+    } else {
+      // Per tutte le altre zone, usa fermate di esempio
+      console.log(`[ZoneService] Zona ${zoneId}-${part} non supportata per fermate reali, usando fermate di esempio`);
       const centerCoords = MAP_CONFIG.gpsConfig.getCenterCoordinates(zoneId);
       
-      const exampleStops = [
-        {
-          id: `${zoneId}_${part}_1`,
-          name: `Fermata esempio 1`,
-          address: `${zone.municipalities[0]}, PC`,
-          latitude: centerCoords.latitude + 0.002,
-          longitude: centerCoords.longitude + 0.002,
-          status: 'pending',
-          zone: zoneId,
-          part: part
-        },
-        {
-          id: `${zoneId}_${part}_2`,
-          name: `Fermata esempio 2`,
-          address: `${zone.municipalities[0]}, PC`,
-          latitude: centerCoords.latitude - 0.002,
-          longitude: centerCoords.longitude - 0.002,
-          status: 'pending',
-          zone: zoneId,
-          part: part
-        }
-      ];
+      const exampleStops = this.generateExampleStops(zoneId, part, centerCoords);
       
+      console.log(`[ZoneService] ✅ ${exampleStops.length} fermate di esempio generate per zona ${zoneId} parte ${part}`);
       return exampleStops;
     }
   }
@@ -287,6 +295,89 @@ class ZoneService {
       pendingStops: zone.estimatedStops - Math.floor(Math.random() * zone.estimatedStops),
       municipalities: zone.municipalities.length,
       workingDays: zone.workingDays.length
+    };
+  }
+
+  // Genera percorsi di esempio per zone senza KML reale
+  static generateExampleRoutes(zoneId, part, centerCoords) {
+    const routes = [];
+    const numRoutes = Math.floor(Math.random() * 3) + 2; // 2-4 percorsi
+    
+    for (let i = 1; i <= numRoutes; i++) {
+      const route = {
+        id: `route_${zoneId}_${part}_${i}`,
+        name: `Percorso ${i} - Zona ${zoneId}${part}`,
+        coordinates: this.generateRouteCoordinates(centerCoords, i),
+        color: this.getRouteColor(i),
+        description: `Percorso di esempio per Zona ${zoneId} - Sottozona ${part}`
+      };
+      routes.push(route);
+    }
+    
+    return routes;
+  }
+
+  // Genera fermate di esempio per zone senza KML reale
+  static generateExampleStops(zoneId, part, centerCoords) {
+    const stops = [];
+    const numStops = Math.floor(Math.random() * 8) + 5; // 5-12 fermate
+    
+    for (let i = 1; i <= numStops; i++) {
+      const stop = {
+        id: `stop_${zoneId}_${part}_${i}`,
+        name: `Fermata ${i}`,
+        latitude: centerCoords.latitude + (Math.random() - 0.5) * 0.01,
+        longitude: centerCoords.longitude + (Math.random() - 0.5) * 0.01,
+        address: `Via di esempio ${i}, ${zoneId}`,
+        status: 'pending',
+        zone: zoneId,
+        part: part
+      };
+      stops.push(stop);
+    }
+    
+    return stops;
+  }
+
+  // Genera coordinate per un percorso di esempio
+  static generateRouteCoordinates(centerCoords, routeIndex) {
+    const coordinates = [];
+    const numPoints = Math.floor(Math.random() * 5) + 3; // 3-7 punti
+    
+    for (let i = 0; i < numPoints; i++) {
+      const lat = centerCoords.latitude + (Math.random() - 0.5) * 0.005;
+      const lng = centerCoords.longitude + (Math.random() - 0.5) * 0.005;
+      coordinates.push([lng, lat, 0]);
+    }
+    
+    return coordinates;
+  }
+
+  // Ottieni colore per percorso
+  static getRouteColor(routeIndex) {
+    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'];
+    return colors[(routeIndex - 1) % colors.length];
+  }
+
+  // Calcola bounds dalle fermate
+  static calculateBoundsFromStops(stops) {
+    if (!stops || stops.length === 0) {
+      return {
+        north: 45.1,
+        south: 45.0,
+        east: 9.5,
+        west: 9.4
+      };
+    }
+
+    const lats = stops.map(stop => stop.latitude);
+    const lngs = stops.map(stop => stop.longitude);
+
+    return {
+      north: Math.max(...lats),
+      south: Math.min(...lats),
+      east: Math.max(...lngs),
+      west: Math.min(...lngs)
     };
   }
 }

@@ -28,6 +28,8 @@ interface MapScreenV3Props {
 }
 
 const MapScreenV3: React.FC<MapScreenV3Props> = ({ zoneId, zonePart, onBack }) => {
+  console.log(`[MapScreenV3] RENDER - zoneId: ${zoneId}, zonePart: ${zonePart}`);
+  
   // State locale
   const [userLocation, setUserLocation] = useState<any>(null);
   const [showOnlyMyPosition, setShowOnlyMyPosition] = useState(false);
@@ -71,6 +73,32 @@ const MapScreenV3: React.FC<MapScreenV3Props> = ({ zoneId, zonePart, onBack }) =
     };
   }, [zoneId, zonePart]); // Ricarica SOLO se zona/parte cambiano
 
+  // Log dei dati caricati
+  useEffect(() => {
+    console.log(`[MapScreenV3] Dati caricati - Routes: ${routes?.length || 0}, Stops: ${stops?.length || 0}, Bounds:`, bounds);
+    if (error) {
+      console.error(`[MapScreenV3] Errore caricamento:`, error);
+    }
+  }, [routes, stops, bounds, error]);
+
+  // Log quando il componente viene montato
+  useEffect(() => {
+    console.log(`[MapScreenV3] Componente montato - zoneId: ${zoneId}, zonePart: ${zonePart}`);
+    console.log(`[MapScreenV3] Stato iniziale - isLoading: ${isLoading}, error: ${error}`);
+  }, []);
+
+  // Log quando cambia lo stato di loading
+  useEffect(() => {
+    console.log(`[MapScreenV3] Stato loading cambiato: ${isLoading}`);
+  }, [isLoading]);
+
+  // Log quando cambia l'errore
+  useEffect(() => {
+    if (error) {
+      console.error(`[MapScreenV3] Errore cambiato:`, error);
+    }
+  }, [error]);
+
   // Fit camera quando bounds disponibili (T23)
   useEffect(() => {
     if (bounds && hasZoneLoaded) {
@@ -109,6 +137,7 @@ const MapScreenV3: React.FC<MapScreenV3Props> = ({ zoneId, zonePart, onBack }) =
       };
 
   if (isLoading) {
+    console.log(`[MapScreenV3] Rendering loading - isLoading: ${isLoading}`);
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>
@@ -119,6 +148,7 @@ const MapScreenV3: React.FC<MapScreenV3Props> = ({ zoneId, zonePart, onBack }) =
   }
 
   if (error) {
+    console.log(`[MapScreenV3] Rendering error: ${error}`);
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorTitle}>❌ Errore Caricamento</Text>
@@ -131,6 +161,11 @@ const MapScreenV3: React.FC<MapScreenV3Props> = ({ zoneId, zonePart, onBack }) =
       </View>
     );
   }
+
+  // Log prima del render principale
+  console.log(`[MapScreenV3] Render principale - isLoading: ${isLoading}, error: ${error}, routes: ${routes?.length || 0}, stops: ${stops?.length || 0}`);
+  console.log(`[MapScreenV3] Bounds:`, bounds);
+  console.log(`[MapScreenV3] Center:`, centerCoordinates);
 
   return (
     <LocationPermissionHandler

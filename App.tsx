@@ -171,13 +171,18 @@ export default function App() {
         const zoneStops = await ZoneService.getStopsForZone(zone.id, part);
         console.log('✅ ZoneService.getStopsForZone SUCCESSO:', zoneStops);
         
-        console.log('TEST 3: Impostando setShowMap(true)');
+        console.log('TEST 3: Impostando selectedZonePart e setShowMap');
+        setSelectedZonePart(part);
         setShowMap(true);
+        console.log(`✅ selectedZonePart impostato a: ${part}`);
         console.log('✅ setShowMap(true) SUCCESSO');
+        
+        const hasRealKML = zoneMapData.hasRealKML;
+        const dataType = hasRealKML ? 'KML REALE' : 'DATI DI ESEMPIO';
         
         Alert.alert(
           'Sottozona Selezionata',
-          `${zone.name} - Sottozona ${part} caricata!\n\nFermate trovate: ${zoneStops.length}\nComuni serviti: ${zoneMapData.municipalities.join(', ')}\n\nDebug: Zona ID ${zone.id}, Parte ${part}`
+          `${zone.name} - Sottozona ${part} caricata!\n\n📊 Tipo dati: ${dataType}\n📍 Fermate trovate: ${zoneStops.length}\n🏘️ Comuni serviti: ${zoneMapData.municipalities.join(', ')}\n\nDebug: Zona ID ${zone.id}, Parte ${part}`
         );
         
       } catch (error) {
@@ -273,7 +278,19 @@ export default function App() {
 
 
   // T24: Gating - Mostra MapScreenV3 SOLO se zona e parte sono selezionate
+  console.log('=== DEBUG Condizione MapScreenV3 ===');
+  console.log('showMap:', showMap);
+  console.log('selectedZone:', selectedZone);
+  console.log('selectedZonePart:', selectedZonePart);
+  console.log('Condizione soddisfatta?', showMap && selectedZone && selectedZonePart);
+  
   if (showMap && selectedZone && selectedZonePart) {
+    console.log('=== DEBUG MapScreenV3 Render ===');
+    console.log('selectedZone:', selectedZone);
+    console.log('selectedZonePart:', selectedZonePart);
+    console.log('zoneId passato a MapScreenV3:', selectedZone.id);
+    console.log('zonePart passato a MapScreenV3:', selectedZonePart);
+    
     return (
       <MapScreenV3
         zoneId={selectedZone.id}
@@ -365,8 +382,13 @@ export default function App() {
                 style={styles.zonePartButton}
                 onPress={() => {
                   console.log('Cliccato Zona A per zona:', selectedZone?.id);
-                  handleZonePartConfirmedDirect(selectedZone, 'A');
-                  setShowZonePartModal(false);
+                  console.log('selectedZone completo:', selectedZone);
+                  if (selectedZone) {
+                    handleZonePartConfirmedDirect(selectedZone, 'A');
+                    setShowZonePartModal(false);
+                  } else {
+                    console.error('❌ selectedZone è null!');
+                  }
                 }}
               >
                 <Text style={styles.zonePartButtonText}>📍 Zona A</Text>
@@ -379,8 +401,13 @@ export default function App() {
                 style={styles.zonePartButton}
                 onPress={() => {
                   console.log('Cliccato Zona B per zona:', selectedZone?.id);
-                  handleZonePartConfirmedDirect(selectedZone, 'B');
-                  setShowZonePartModal(false);
+                  console.log('selectedZone completo:', selectedZone);
+                  if (selectedZone) {
+                    handleZonePartConfirmedDirect(selectedZone, 'B');
+                    setShowZonePartModal(false);
+                  } else {
+                    console.error('❌ selectedZone è null!');
+                  }
                 }}
               >
                 <Text style={styles.zonePartButtonText}>📍 Zona B</Text>
