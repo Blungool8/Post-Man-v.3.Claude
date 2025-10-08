@@ -4,9 +4,6 @@
  */
 
 import { Platform } from 'react-native';
-import { Asset } from 'expo-asset';
-import * as FileSystem from 'expo-file-system';
-import KMLLoaderWeb from './KMLLoader.web';
 
 export interface KMLLoadResult {
   content: string;
@@ -25,6 +22,7 @@ class KMLLoader {
   static async loadFromAssets(zoneId: number, part: 'A' | 'B'): Promise<KMLLoadResult> {
     // Su web, usa versione web-compatible
     if (Platform.OS === 'web') {
+      const KMLLoaderWeb = require('./KMLLoader.web').default;
       return KMLLoaderWeb.loadFromAssets(zoneId, part);
     }
 
@@ -33,6 +31,10 @@ class KMLLoader {
     console.log(`[KMLLoader] Caricamento ${fileName} da assets...`);
     
     try {
+      // Import condizionali solo su mobile
+      const { Asset } = require('expo-asset');
+      const FileSystem = require('expo-file-system');
+
       // Mappa statica dei file KML disponibili
       const kmlAssets: Record<string, any> = {
         'CTD_CastelSanGiovanni_Z09_B.kml': require('../../../assets/kml/CTD_CastelSanGiovanni_Z09_B.kml'),
@@ -78,12 +80,16 @@ class KMLLoader {
   static async loadFromStorage(filePath: string): Promise<KMLLoadResult> {
     // Su web, usa versione web-compatible
     if (Platform.OS === 'web') {
+      const KMLLoaderWeb = require('./KMLLoader.web').default;
       return KMLLoaderWeb.loadFromStorage(filePath);
     }
 
     console.log(`[KMLLoader] Caricamento da storage: ${filePath}`);
     
     try {
+      // Import condizionale solo su mobile
+      const FileSystem = require('expo-file-system');
+
       const fileInfo = await FileSystem.getInfoAsync(filePath);
       
       if (!fileInfo.exists) {
@@ -115,6 +121,7 @@ class KMLLoader {
   static async checkKMLExists(zoneId: number, part: 'A' | 'B'): Promise<boolean> {
     // Su web, usa versione web-compatible
     if (Platform.OS === 'web') {
+      const KMLLoaderWeb = require('./KMLLoader.web').default;
       return KMLLoaderWeb.checkKMLExists(zoneId, part);
     }
 
