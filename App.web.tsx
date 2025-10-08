@@ -153,6 +153,20 @@ export default function App() {
           <Text style={styles.primaryButtonText}>🗺️ Seleziona Zona</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity 
+          style={styles.secondaryButton}
+          onPress={() => Alert.alert('Liste Fermate', 'Funzionalità disponibile su mobile (M3)')}
+        >
+          <Text style={styles.secondaryButtonText}>📋 Gestisci Liste Fermate</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.secondaryButton}
+          onPress={() => Alert.alert('Nuova Lista', 'Funzionalità disponibile su mobile (M3)')}
+        >
+          <Text style={styles.secondaryButtonText}>➕ Crea Nuova Lista</Text>
+        </TouchableOpacity>
+
         <View style={styles.webWarning}>
           <Text style={styles.webWarningText}>
             ⚠️ Limitazioni Web: Mappa e GPS richiedono emulatore/device
@@ -303,6 +317,20 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  secondaryButton: {
+    backgroundColor: 'white',
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: '#2196F3',
+  },
+  secondaryButtonText: {
+    color: '#2196F3',
+    fontSize: 16,
+    fontWeight: '600',
   },
   webWarning: {
     backgroundColor: '#FFF3E0',
