@@ -16,7 +16,12 @@ class KMLLoaderSimple {
     
     console.log(`[KMLLoaderSimple] Caricamento ${fileName} (versione test)...`);
     
-    // KML di test hardcoded per Zona 9-B
+    // Solo Zona 9-B è supportata per ora
+    if (zoneId !== 9 || part !== 'B') {
+      throw new Error(`Zona ${zoneId}-${part} non supportata. Solo Zona 9-B è disponibile per il test.`);
+    }
+    
+    // KML di test hardcoded SOLO per Zona 9-B
     const testKML = `<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
   <Document>
@@ -74,8 +79,8 @@ class KMLLoaderSimple {
   }
 
   static async checkKMLExists(zoneId: number, part: 'A' | 'B'): Promise<boolean> {
-    // Per ora restituisce sempre true per i test
-    return true;
+    // Solo Zona 9-B è disponibile per il test
+    return zoneId === 9 && part === 'B';
   }
 }
 
