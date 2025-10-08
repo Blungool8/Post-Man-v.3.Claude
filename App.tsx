@@ -8,11 +8,17 @@ import {
   ScrollView, 
   Alert, 
   Modal,
-  TextInput
+  TextInput,
+  Platform
 } from 'react-native';
 import ZoneService from './src/services/ZoneService';
 import { ZONE_DATA, CTD_INFO } from './src/config/ZoneConfig';
-import MapScreenV3 from './src/screens/MapScreen/MapScreenV3';
+import MapScreenV3Web from './src/screens/MapScreen/MapScreenV3Web';
+
+// MapScreenV3 (con react-native-maps) solo su mobile
+const MapScreenV3 = Platform.OS === 'web' 
+  ? MapScreenV3Web 
+  : require('./src/screens/MapScreen/MapScreenV3').default;
 
 // Dati di esempio per le liste fermate
 const exampleStopLists = [

@@ -3,8 +3,10 @@
  * Milestone M1 - Task T10
  */
 
+import { Platform } from 'react-native';
 import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
+import KMLLoaderWeb from './KMLLoader.web';
 
 export interface KMLLoadResult {
   content: string;
@@ -21,6 +23,11 @@ class KMLLoader {
    * @returns Contenuto del file KML
    */
   static async loadFromAssets(zoneId: number, part: 'A' | 'B'): Promise<KMLLoadResult> {
+    // Su web, usa versione web-compatible
+    if (Platform.OS === 'web') {
+      return KMLLoaderWeb.loadFromAssets(zoneId, part);
+    }
+
     const fileName = `CTD_CastelSanGiovanni_Z${String(zoneId).padStart(2, '0')}_${part}.kml`;
     
     console.log(`[KMLLoader] Caricamento ${fileName} da assets...`);
@@ -69,6 +76,11 @@ class KMLLoader {
    * @param filePath - Percorso del file
    */
   static async loadFromStorage(filePath: string): Promise<KMLLoadResult> {
+    // Su web, usa versione web-compatible
+    if (Platform.OS === 'web') {
+      return KMLLoaderWeb.loadFromStorage(filePath);
+    }
+
     console.log(`[KMLLoader] Caricamento da storage: ${filePath}`);
     
     try {
@@ -101,6 +113,11 @@ class KMLLoader {
    * Verifica se esiste un file KML per la zona/sottozona specificata
    */
   static async checkKMLExists(zoneId: number, part: 'A' | 'B'): Promise<boolean> {
+    // Su web, usa versione web-compatible
+    if (Platform.OS === 'web') {
+      return KMLLoaderWeb.checkKMLExists(zoneId, part);
+    }
+
     const fileName = `CTD_CastelSanGiovanni_Z${String(zoneId).padStart(2, '0')}_${part}.kml`;
     
     // Mappa statica dei file KML disponibili
