@@ -45,7 +45,7 @@
 
 **Testing Status**:
 - Web (npm run web): ✅ FUNZIONANTE (UI/UX completa)
-- Mobile (npm run android): ⏳ Da testare (mappa + GPS)
+- Mobile (Expo Go): ✅ FUNZIONANTE (app si carica correttamente con tunnel mode)
 
 **DoD Completo**:
 - [x] M1: KML Pipeline (Loader, Parser, Validator)
@@ -54,7 +54,7 @@
 - [x] Mobile: Codice pronto per testing con GPS
 - [x] Conformità 100% regole pk (AGENT_INSTRUCTIONS, PRD, PLANNING)
 
-**Commits (12 totali)**:
+**Commits (15 totali)**:
 - `629e12e` - Initial setup
 - `f3a70a8` - Lint fixes
 - `cb5a6c0` - Work log setup
@@ -66,14 +66,17 @@
 - `59b97d3` - Conditional imports fix
 - `032f8dc` - App.web.tsx creation
 - `82b0572` - Liste buttons
-- `3effd39` - Liste complete ✅
+- `3effd39` - Liste complete
+- `62179f0` - Fix mobile imports
+- `c848078` - Add missing index.ts
+- `bfcf1bb` - KMLLoaderSimple + mobile success ✅
+
+**🎉 MILESTONE RAGGIUNTO**: App funzionante su mobile! ✅
 
 **Next Steps**:
-- Testing completo su emulatore Android
-- Verifica rendering 14 percorsi KML
-- Verifica marker GPS-driven (200m)
 - M3: Banner "Prossima Fermata" + Lista Fermate da KML + +Fermata
 - M4: Persistenza SQLite + Riepilogo + Export
+- Testing completo: Verifica rendering percorsi KML + marker GPS-driven (200m)
 
 ---
 
