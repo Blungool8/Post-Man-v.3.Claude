@@ -36,26 +36,23 @@ class KMLLoader {
       const FileSystem = require('expo-file-system');
 
       // Mappa statica dei file KML disponibili
-      const kmlAssets: Record<string, any> = {
-        'CTD_CastelSanGiovanni_Z09_B.kml': require('../../../assets/kml/CTD_CastelSanGiovanni_Z09_B.kml'),
+      // Nota: I file KML vengono caricati direttamente dal filesystem, non come asset bundle
+      const kmlAssets: Record<string, string> = {
+        'CTD_CastelSanGiovanni_Z09_B.kml': 'CTD_CastelSanGiovanni_Z09_B.kml',
         // Aggiungi altri file KML qui quando disponibili
-        // 'CTD_CastelSanGiovanni_Z09_A.kml': require('../../../assets/kml/CTD_CastelSanGiovanni_Z09_A.kml'),
+        // 'CTD_CastelSanGiovanni_Z09_A.kml': 'CTD_CastelSanGiovanni_Z09_A.kml',
       };
       
       if (!kmlAssets[fileName]) {
         throw new Error(`File ${fileName} non trovato in assets`);
       }
       
-      // Carica asset
-      const asset = Asset.fromModule(kmlAssets[fileName]);
-      await asset.downloadAsync();
+      // Carica direttamente dal filesystem (bundle directory)
+      const assetPath = `${FileSystem.bundleDirectory}assets/kml/${fileNameOnly}`;
+      console.log(`[KMLLoader] Percorso asset: ${assetPath}`);
       
-      if (!asset.localUri) {
-        throw new Error(`Asset ${fileName} non ha localUri`);
-      }
-      
-      // Leggi contenuto file
-      const content = await FileSystem.readAsStringAsync(asset.localUri);
+      // Leggi contenuto file direttamente
+      const content = await FileSystem.readAsStringAsync(assetPath);
       
       const result: KMLLoadResult = {
         content,
