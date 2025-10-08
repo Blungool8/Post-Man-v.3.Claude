@@ -13,11 +13,10 @@ import {
 } from 'react-native';
 import ZoneService from './src/services/ZoneService';
 import { ZONE_DATA, CTD_INFO } from './src/config/ZoneConfig';
-import MapScreenV3Web from './src/screens/MapScreen/MapScreenV3Web';
 
-// MapScreenV3 (con react-native-maps) solo su mobile
+// MapScreenV3 - Import condizionale per evitare bundle mobile con codice web
 const MapScreenV3 = Platform.OS === 'web' 
-  ? MapScreenV3Web 
+  ? require('./src/screens/MapScreen/MapScreenV3Web').default
   : require('./src/screens/MapScreen/MapScreenV3').default;
 
 // Dati di esempio per le liste fermate
