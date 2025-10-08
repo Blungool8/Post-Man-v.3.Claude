@@ -17,7 +17,78 @@ import {
 } from 'react-native';
 import { ZONE_DATA, CTD_INFO } from './src/config/ZoneConfig';
 
+// Dati di esempio per le liste fermate
+const exampleStopLists = [
+  {
+    id: '1',
+    name: 'Lista Fermate 1',
+    stops: [
+      {
+        id: '1',
+        name: 'Via Torino 15',
+        address: 'Via Torino 15, Milano, MI 20123',
+        latitude: 45.4642,
+        longitude: 9.1900,
+        status: 'pending'
+      },
+      {
+        id: '2',
+        name: 'Piazza Duomo 1',
+        address: 'Piazza Duomo 1, Milano, MI 20121',
+        latitude: 45.4641,
+        longitude: 9.1919,
+        status: 'pending'
+      },
+      {
+        id: '3',
+        name: 'Via Brera 28',
+        address: 'Via Brera 28, Milano, MI 20121',
+        latitude: 45.4719,
+        longitude: 9.1881,
+        status: 'completed'
+      }
+    ]
+  },
+  {
+    id: '2',
+    name: 'Lista Fermate 2',
+    stops: [
+      {
+        id: '4',
+        name: 'Via Roma 45',
+        address: 'Via Roma 45, Piacenza, PC 29121',
+        latitude: 45.0526,
+        longitude: 9.6934,
+        status: 'pending'
+      },
+      {
+        id: '5',
+        name: 'Piazza Cavalli 12',
+        address: 'Piazza Cavalli 12, Piacenza, PC 29121',
+        latitude: 45.0526,
+        longitude: 9.6934,
+        status: 'pending'
+      }
+    ]
+  }
+];
+
 // Type definitions
+interface Stop {
+  id: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  status: string;
+}
+
+interface StopList {
+  id: string;
+  name: string;
+  stops: Stop[];
+}
+
 interface Zone {
   id: number;
   name: string;
@@ -32,11 +103,17 @@ interface Zone {
 }
 
 export default function App() {
+  const [stopLists, setStopLists] = useState<StopList[]>(exampleStopLists);
+  const [selectedStopList, setSelectedStopList] = useState<StopList | null>(null);
+  const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
   const [showZoneModal, setShowZoneModal] = useState(false);
   const [showZonePartModal, setShowZonePartModal] = useState(false);
+  const [showStopListModal, setShowStopListModal] = useState(false);
+  const [showCreateListModal, setShowCreateListModal] = useState(false);
   const [selectedZone, setSelectedZone] = useState<Zone | null>(null);
   const [selectedZonePart, setSelectedZonePart] = useState<'A' | 'B' | null>(null);
   const [showMap, setShowMap] = useState(false);
+  const [newListName, setNewListName] = useState('');
 
   const handleSelectZone = () => {
     setShowZoneModal(true);
@@ -58,6 +135,55 @@ export default function App() {
     setShowMap(false);
     setSelectedZone(null);
     setSelectedZonePart(null);
+  };
+
+  const handleCreateStopList = () => {
+    if (newListName.trim()) {
+      const newList: StopList = {
+        id: Date.now().toString(),
+        name: newListName.trim(),
+        stops: []
+      };
+      setStopLists(prev => [...prev, newList]);
+      setNewListName('');
+      setShowCreateListModal(false);
+      Alert.alert('Lista Creata', `Lista "${newList.name}" creata con successo!`);
+    }
+  };
+
+  const handleCompleteStop = (stopId: string) => {
+    if (selectedStopList) {
+      setStopLists(prevLists =>
+        prevLists.map(list =>
+          list.id === selectedStopList.id
+            ? {
+                ...list,
+                stops: list.stops.map(stop =>
+                  stop.id === stopId
+                    ? { ...stop, status: 'completed' }
+                    : stop
+                )
+              }
+            : list
+        )
+      );
+      
+      // Aggiorna anche selectedStopList
+      const updatedList = stopLists.find(l => l.id === selectedStopList.id);
+      if (updatedList) {
+        setSelectedStopList({
+          ...updatedList,
+          stops: updatedList.stops.map(stop =>
+            stop.id === stopId
+              ? { ...stop, status: 'completed' }
+              : stop
+          )
+        });
+      }
+      
+      setSelectedStop(null);
+      Alert.alert('Fermata Completata', 'Fermata completata con successo!');
+    }
   };
 
   // Mostra schermata mappa (versione web semplificata)
@@ -142,7 +268,7 @@ export default function App() {
       <View style={styles.ctdInfo}>
         <Text style={styles.ctdTitle}>📍 {CTD_INFO.name}</Text>
         <Text style={styles.ctdAddress}>{CTD_INFO.address}</Text>
-        <Text style={styles.ctdPhone}>📞 {CTD_INFO.phone}</Text>
+        <Text style={styles.ctdProvince}>{CTD_INFO.province} - {CTD_INFO.region}</Text>
       </View>
 
       <View style={styles.actions}>
@@ -155,14 +281,14 @@ export default function App() {
 
         <TouchableOpacity 
           style={styles.secondaryButton}
-          onPress={() => Alert.alert('Liste Fermate', 'Funzionalità disponibile su mobile (M3)')}
+          onPress={() => setShowStopListModal(true)}
         >
           <Text style={styles.secondaryButtonText}>📋 Gestisci Liste Fermate</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
           style={styles.secondaryButton}
-          onPress={() => Alert.alert('Nuova Lista', 'Funzionalità disponibile su mobile (M3)')}
+          onPress={() => setShowCreateListModal(true)}
         >
           <Text style={styles.secondaryButtonText}>➕ Crea Nuova Lista</Text>
         </TouchableOpacity>
@@ -253,6 +379,142 @@ export default function App() {
           </View>
         </View>
       </Modal>
+
+      {/* Modal Liste Fermate */}
+      <Modal visible={showStopListModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Liste Fermate</Text>
+            
+            <ScrollView style={styles.stopListsContainer}>
+              {stopLists.map(list => (
+                <TouchableOpacity
+                  key={list.id}
+                  style={styles.stopListItem}
+                  onPress={() => {
+                    setSelectedStopList(list);
+                    setShowStopListModal(false);
+                  }}
+                >
+                  <Text style={styles.stopListName}>{list.name}</Text>
+                  <Text style={styles.stopListCount}>
+                    {list.stops.length} fermate
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            
+            <TouchableOpacity 
+              style={styles.modalCloseButton} 
+              onPress={() => setShowStopListModal(false)}
+            >
+              <Text style={styles.modalCloseText}>Chiudi</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal Crea Lista */}
+      <Modal visible={showCreateListModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Crea Nuova Lista</Text>
+            
+            <TextInput
+              style={styles.textInput}
+              placeholder="Nome lista fermate..."
+              value={newListName}
+              onChangeText={setNewListName}
+            />
+            
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity 
+                style={styles.modalButton} 
+                onPress={handleCreateStopList}
+              >
+                <Text style={styles.modalButtonText}>Crea</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.modalButtonSecondary]} 
+                onPress={() => {
+                  setShowCreateListModal(false);
+                  setNewListName('');
+                }}
+              >
+                <Text style={styles.modalButtonText}>Annulla</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Visualizzazione Lista Selezionata */}
+      {selectedStopList && !showMap && (
+        <View style={styles.selectedListContainer}>
+          <View style={styles.selectedListHeader}>
+            <Text style={styles.selectedListTitle}>📋 {selectedStopList.name}</Text>
+            <TouchableOpacity onPress={() => setSelectedStopList(null)}>
+              <Text style={styles.closeListButton}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.stopsScrollContainer}>
+            {selectedStopList.stops.map(stop => (
+              <TouchableOpacity
+                key={stop.id}
+                style={[
+                  styles.stopItem,
+                  { backgroundColor: stop.status === 'completed' ? '#4CAF50' : '#FF9800' }
+                ]}
+                onPress={() => setSelectedStop(stop)}
+              >
+                <Text style={styles.stopName}>{stop.name}</Text>
+                <Text style={styles.stopAddress}>{stop.address}</Text>
+                <Text style={styles.stopStatus}>
+                  {stop.status === 'completed' ? '✅ Completata' : '⏳ In attesa'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
+      {/* Dettagli Fermata Selezionata */}
+      {selectedStop && (
+        <Modal visible={true} animationType="fade" transparent>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Fermata: {selectedStop.name}</Text>
+              
+              <View style={styles.stopDetails}>
+                <Text style={styles.stopDetailText}>📍 {selectedStop.address}</Text>
+                <Text style={styles.stopDetailText}>
+                  📊 Status: {selectedStop.status === 'completed' ? '✅ Completata' : '⏳ Pendente'}
+                </Text>
+              </View>
+              
+              <View style={styles.modalButtonsRow}>
+                {selectedStop.status !== 'completed' && (
+                  <TouchableOpacity 
+                    style={styles.modalButton} 
+                    onPress={() => handleCompleteStop(selectedStop.id)}
+                  >
+                    <Text style={styles.modalButtonText}>✅ Completa</Text>
+                  </TouchableOpacity>
+                )}
+                
+                <TouchableOpacity 
+                  style={[styles.modalButton, styles.modalButtonSecondary]} 
+                  onPress={() => setSelectedStop(null)}
+                >
+                  <Text style={styles.modalButtonText}>Chiudi</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -299,9 +561,9 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 3,
   },
-  ctdPhone: {
-    fontSize: 13,
-    color: '#666',
+  ctdProvince: {
+    fontSize: 12,
+    color: '#999',
   },
   actions: {
     padding: 20,
@@ -543,6 +805,124 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 6,
     paddingLeft: 10,
+  },
+  // Stop Lists Styles
+  stopListsContainer: {
+    maxHeight: 300,
+    marginBottom: 15,
+  },
+  stopListItem: {
+    padding: 15,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  stopListName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2196F3',
+    marginBottom: 5,
+  },
+  stopListCount: {
+    fontSize: 13,
+    color: '#666',
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  modalButtonsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalButton: {
+    flex: 1,
+    backgroundColor: '#2196F3',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalButtonSecondary: {
+    backgroundColor: '#999',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // Selected List Styles
+  selectedListContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '60%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 10,
+  },
+  selectedListHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  selectedListTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  closeListButton: {
+    fontSize: 24,
+    color: '#999',
+    padding: 5,
+  },
+  stopsScrollContainer: {
+    flex: 1,
+    padding: 15,
+  },
+  stopItem: {
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  stopName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
+    marginBottom: 5,
+  },
+  stopAddress: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.9)',
+    marginBottom: 5,
+  },
+  stopStatus: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.8)',
+  },
+  // Stop Details Modal
+  stopDetails: {
+    backgroundColor: '#f5f5f5',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  stopDetailText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
   },
 });
 
